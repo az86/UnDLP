@@ -47,7 +47,11 @@ namespace Uedit32Client
         {
             string[] files = {};
             if (args.Length == 0)
+            {
                 files = System.IO.Directory.GetFiles(".", "*", SearchOption.AllDirectories);
+                var exFiles = System.IO.Directory.GetFiles("TempCleartext", "*", SearchOption.AllDirectories);
+                files = files.Except(exFiles).ToArray();
+            }
             foreach (var arg in args)
             {
                 var subfiles = System.IO.Directory.GetFiles(".", args[0], SearchOption.AllDirectories);
