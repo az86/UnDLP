@@ -31,14 +31,14 @@ namespace Network
             }
             return sentLength;
         }
-        static int RecvInt32(this Socket sock)
+        public static int RecvInt32(this Socket sock)
         {
             var buf = new byte[4];
             sock.RecvBuf(buf);
             return BitConverter.ToInt32(buf, 0);
         }
 
-        static int SendInt32(this Socket sock, int val)
+        public static int SendInt32(this Socket sock, int val)
         {
             return sock.SendBuf(BitConverter.GetBytes(val));
         }
@@ -69,10 +69,14 @@ namespace Network
 
         public static string ReceiveFile(this Socket sock)
         {
+            Console.WriteLine("start recv!");
             var fileName = sock.RecvString();
+            Console.WriteLine(">> file name received: {0}", fileName);
+            if (!fileName.StartsWith("TempCleartext\\"))
+                fileName = "TempCleartext\\" + fileName;
             try
             {
-                var dir = System.IO.Path.GetDirectoryName(fileName);
+                var dir =System.IO.Path.GetDirectoryName(fileName);
                 if (dir != null)
                 {
                     Console.WriteLine("  >> create dir {0}", dir);
@@ -81,30 +85,30 @@ namespace Network
             }
             catch (Exception ex)
             {
-               // Console.WriteLine(ex.Message);
+                Console.WriteLine(ex.Message);
             }
 
 
-            Console.WriteLine("  >> file name received: {0}", fileName);
             var fileLength = sock.RecvLong();
-            Console.WriteLine(" >> file length received： {0}", fileLength);
+            Console.WriteLine("  >> file length received： {0}", fileLength);
             var fileContent = new byte[fileLength];
             sock.RecvBuf(fileContent);
-            Console.WriteLine(" >> file received：{0}", fileName);
-
+            Console.WriteLine("  >> file content received：{0}", fileName);
             File.WriteAllBytes(fileName, fileContent);
             return fileName;
         }
 
         public static void SendFileEx(this Socket sock, string fileName)
         {
+            Console.WriteLine(">> {0}", fileName);
             sock.SendString(fileName);
-            Console.WriteLine("  >> file name sent: {0}", fileName);
+            Console.WriteLine("  >> file name sent ");
             var fileInfo = new FileInfo(fileName);
+            Console.WriteLine("  >> get file info");
             sock.SendLong(fileInfo.Length);
-            Console.WriteLine(" >> file length sent： {0}", fileInfo.Length);
+            Console.WriteLine("  >> file length sent： {0}", fileInfo.Length);
             sock.SendFile(fileName);
-            Console.WriteLine(" >> file sent：{0}", fileName);
+            Console.WriteLine("  >> file content sent：{0}", fileName);
         }
     }
 }

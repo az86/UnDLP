@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.Remoting.Messaging;
 using Network;
 
 namespace Uedit32Client
@@ -16,12 +17,22 @@ namespace Uedit32Client
             {
                 var sock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
                 sock.Connect(IPAddress.Parse(ConfigurationManager.AppSettings["srvIP"]), 7420);
-
-                var files = FileFiles(args);
-                foreach (var file in files)
+                if (args[0] == "!clear")
                 {
-                    sock.SendFileEx(file);
-                    sock.ReceiveFile();
+                    sock.SendInt32(0);
+                    Console.WriteLine(">>clear server temp directory OK!");
+                }
+                else
+                {
+                    var files = FindFiles(args);
+                    sock.SendInt32(files.Length);
+                    foreach (var file in files)
+                    {
+                        sock.SendFileEx(file);
+                        sock.ReceiveFile();
+                    }
+                    Console.WriteLine(">>{0} files ok! all files path store in files.txt", files.Length);
+                    System.IO.File.WriteAllLines("files.txt", files);
                 }
                 sock.Close();
             }
@@ -32,7 +43,7 @@ namespace Uedit32Client
 
         }
 
-        static string[] FileFiles(string[] args)
+        static string[] FindFiles(string[] args)
         {
             string[] files = {};
             if (args.Length == 0)
@@ -43,11 +54,9 @@ namespace Uedit32Client
                 
                 files = files.Concat(subfiles).ToArray();
             }
-            var filesE = System.IO.Directory.GetFiles(".", "*.dll", SearchOption.AllDirectories);
+            var filesE = new string[] {@".\Uedit32Client.exe", @".\Uedit32Client.exe.config", @".\Network.dll" };
             files = files.Except(filesE).ToArray();
-            filesE = System.IO.Directory.GetFiles(".", "*.exe", SearchOption.AllDirectories);
-            files = files.Except(filesE).ToArray();
-            return files.Select(str=>str.Remove(0, ".".Length+1)).ToArray();
+            return files;
         }
     }
 }

@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -26,15 +28,27 @@ namespace Uedit32
         {
             try
             {
-                while (true)
+                var sum = clientx.RecvInt32();
+                if (sum == 0)
                 {
-                    var fileName = clientx.ReceiveFile();
-                    clientx.SendFileEx(fileName);
-                    var dir = System.IO.Path.GetDirectoryName(fileName);
-                    System.IO.File.Delete(fileName);
-                    if (!string.IsNullOrEmpty(dir))
-                        System.IO.Directory.Delete(dir, true);
+                    System.IO.Directory.Delete("TempCleartext", true);
+                    Console.WriteLine(">>clear server temp directory OK!");
                 }
+                else
+                {
+                    for (var i = 0; i < sum; i++)
+                    {
+                        var fileName = clientx.ReceiveFile();
+                        clientx.SendFileEx(fileName);
+                    }
+                    Console.WriteLine(">>{0} files ok!", sum);
+                }
+                clientx.Close();
+            }
+            catch (IOException ex)
+            {
+                Console.WriteLine(ex.Message);
+
             }
             catch (Exception ex)
             {
